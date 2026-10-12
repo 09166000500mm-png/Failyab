@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فایلینگ میراث ملک</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f3ee;color:#202a27;font-family:Tahoma,Arial,sans-serif}header{background:#173b34;color:white;padding:22px 16px;border-radius:0 0 20px 20px}header h1{margin:0 0 8px;font-size:22px}header p{margin:0;color:#d7e6df;font-size:13px}.wrap{padding:14px;max-width:850px;margin:auto}.panel{background:white;border:1px solid #e4e4df;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 3px 12px #172e2410}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}label{font-size:12px;color:#52615b}input,select,textarea{width:100%;padding:11px;border:1px solid #d5dbd6;border-radius:9px;background:white;font:inherit;margin-top:5px}textarea{min-height:65px}button{border:0;border-radius:9px;padding:11px 14px;background:#1d5a4d;color:white;font:inherit;cursor:pointer;margin:5px 3px 0 0}button.secondary{background:#e8efeb;color:#20483e}button.danger{background:#a94442}.stats{display:flex;gap:8px}.stat{flex:1;background:#eef4f0;padding:12px;border-radius:10px;text-align:center}.stat b{display:block;font-size:22px}.item{border:1px solid #e0e5e1;padding:12px;border-radius:10px;margin:8px 0}.muted{font-size:12px;color:#68736e}.warning{background:#fff6df;border-radius:10px;padding:11px;font-size:12px;line-height:1.8}.hidden{display:none}@media(max-width:480px){.grid{grid-template-columns:1fr}.stats{flex-direction:row}}
+</style></head><body>
+<header><h1>دپارتمان میراث ملک</h1><p>فایلینگ املاک اهواز · ثبت و مدیریت فایل‌ها</p></header><main class="wrap">
+<div class="panel"><div class="stats"><div class="stat"><b id="total">۰</b><span>کل فایل‌ها</span></div><div class="stat"><b id="sale">۰</b><span>فروش</span></div><div class="stat"><b id="rent">۰</b><span>اجاره / رهن</span></div></div></div>
+<div class="warning">این نسخه فایلینگ دستی است و اطلاعات را روی همین دستگاه ذخیره می‌کند. اتصال خودکار به دیوار و شیپور فعال نیست؛ آگهی ساختگی نمایش داده نمی‌شود.</div>
+<div class="panel"><h3 id="formTitle">ثبت فایل جدید</h3><input id="editId" type="hidden"><div class="grid">
+<label>عنوان فایل<input id="title" placeholder="مثلاً آپارتمان دوخوابه"></label>
+<label>محله اهواز<select id="area"><option>گلستان</option><option>سعدی</option><option>بوستان</option><option>کیانپارس</option><option>کیان‌آباد</option><option>زیتون کارمندی</option><option>کوروش</option><option>پادادشهر</option><option>ناحیه دیگر اهواز</option></select></label>
+<label>نوع معامله<select id="deal"><option>فروش</option><option>رهن و اجاره</option><option>رهن کامل</option><option>خرید</option><option>مشارکت</option><option>معاوضه</option></select></label>
+<label>نوع ملک<select id="kind"><option>آپارتمان</option><option>خانه</option><option>ویلا</option><option>زمین</option><option>تجاری</option><option>باغ</option><option>پیش‌فروش</option></select></label>
+<label>قیمت / ودیعه<input id="price" inputmode="numeric" placeholder="تومان"></label>
+<label>متراژ (متر)<input id="areaSize" inputmode="numeric" placeholder="مثلاً ۱۲۰"></label>
+<label>شماره مالک<input id="phone" inputmode="tel" placeholder="اختیاری"></label>
+<label>لینک آگهی<input id="url" placeholder="https://..."></label></div>
+<label>توضیحات<textarea id="notes" placeholder="سن بنا، خواب، پارکینگ و ..."></textarea></label>
+<button onclick="save()">ذخیره فایل</button><button class="secondary" onclick="resetForm()">فرم جدید</button>
+</div>
+<div class="panel"><h3>جست‌وجو و فایل‌های ثبت‌شده</h3><input id="q" placeholder="جست‌وجو در عنوان، محله، شماره..." oninput="render()"><div class="grid"><label>فیلتر محله<select id="filterArea" onchange="render()"><option value="">همه محله‌ها</option><option>گلستان</option><option>سعدی</option><option>بوستان</option><option>کیانپارس</option><option>کیان‌آباد</option><option>زیتون کارمندی</option><option>کوروش</option><option>پادادشهر</option></select></label><label>فیلتر معامله<select id="filterDeal" onchange="render()"><option value="">همه معاملات</option><option>فروش</option><option>رهن و اجاره</option><option>رهن کامل</option><option>خرید</option><option>مشارکت</option><option>معاوضه</option></select></label></div>
+<div id="list"></div><button class="secondary" onclick="exportJSON()">خروجی پشتیبان JSON</button><button class="secondary" onclick="exportCSV()">خروجی CSV</button><label class="muted">بازیابی پشتیبان JSON <input type="file" accept=".json,application/json" onchange="importJSON(event)"></label></div>
+</main><script>
+const $=id=>document.getElementById(id), key='mirasMelkListingsV1';let records=JSON.parse(localStorage.getItem(key)||'[]');
+function persist(){localStorage.setItem(key,JSON.stringify(records));render()}
+function val(id){return $(id).value.trim()}
+function save(){if(!val('title')){alert('عنوان فایل را وارد کنید');return}let id=val('editId')||String(Date.now());let item={id,title:val('title'),area:val('area'),deal:val('deal'),kind:val('kind'),price:val('price'),areaSize:val('areaSize'),phone:val('phone'),url:val('url'),notes:val('notes'),updatedAt:new Date().toISOString()};let i=records.findIndex(x=>x.id===id);if(i>=0)records[i]=item;else records.unshift(item);persist();resetForm();alert('فایل ذخیره شد')}
+function resetForm(){['editId','title','price','areaSize','phone','url','notes'].forEach(x=>$(x).value='');$('formTitle').textContent='ثبت فایل جدید'}
+function edit(id){let x=records.find(r=>r.id===id);if(!x)return;Object.keys({title:1,area:1,deal:1,kind:1,price:1,areaSize:1,phone:1,url:1,notes:1}).forEach(k=>$(k).value=x[k]||'');$('editId').value=x.id;$('formTitle').textContent='ویرایش فایل';window.scrollTo(0,0)}
+function del(id){if(confirm('این فایل حذف شود؟')){records=records.filter(x=>x.id!==id);persist()}}
+function render(){let q=val('q').toLowerCase(),a=val('filterArea'),d=val('filterDeal');let arr=records.filter(x=>(!q||Object.values(x).join(' ').toLowerCase().includes(q))&&(!a||x.area===a)&&(!d||x.deal===d));$('total').textContent=records.length;$('sale').textContent=records.filter(x=>x.deal==='فروش').length;$('rent').textContent=records.filter(x=>['رهن و اجاره','رهن کامل'].includes(x.deal)).length;$('list').innerHTML=arr.length?arr.map(x=>'<div class="item"><b>'+esc(x.title)+'</b><div class="muted">'+esc(x.area)+' · '+esc(x.deal)+' · '+esc(x.kind)+'</div><p>قیمت/ودیعه: '+esc(x.price||'ثبت نشده')+' · متراژ: '+esc(x.areaSize||'—')+' متر</p><p>'+esc(x.notes||'')+'</p><div class="muted">مالک: '+esc(x.phone||'ثبت نشده')+'</div>'+(x.url?'<p><a href="'+safeUrl(x.url)+'" target="_blank" rel="noopener">بازکردن لینک آگهی</a></p>':'')+'<button class="secondary" onclick="edit(\''+x.id+'\')">ویرایش</button><button class="danger" onclick="del(\''+x.id+'\')">حذف</button></div>').join(''):'<p class="muted">فایلی ثبت نشده است. برای شروع، فرم بالا را تکمیل کنید.</p>'}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function safeUrl(s){try{let u=new URL(s);return ['http:','https:'].includes(u.protocol)?u.href:'#'}catch(e){return '#'}}
+function download(name,data,type){let b=new Blob([data],{type}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+function exportJSON(){download('miras-melk-backup.json',JSON.stringify(records,null,2),'application/json')}
+function exportCSV(){let cols=['title','area','deal','kind','price','areaSize','phone','url','notes'];let csv=[cols.join(','),...records.map(x=>cols.map(k=>'"'+String(x[k]||'').replace(/"/g,'""')+'"').join(','))].join('\n');download('miras-melk.csv','\ufeff'+csv,'text/csv;charset=utf-8')}
+function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let data=JSON.parse(r.result);if(!Array.isArray(data))throw 0;records=data;persist();alert('پشتیبان بازیابی شد')}catch(_){alert('فایل پشتیبان معتبر نیست')}};r.readAsText(f)}
+render();
+</script></body></html>
